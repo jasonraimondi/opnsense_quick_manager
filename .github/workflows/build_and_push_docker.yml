@@ -37,5 +37,4 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/url-to-png:${{ steps.prep.outputs.version }}
-            ${{ secrets.DOCKERHUB_USER }}/url-to-png:${{ steps.prep.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/opnsense_quick_manager:${{ steps.prep.outputs.version }}
