@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blocklist Control</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.13.5/cdn.min.js" defer></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css" rel="stylesheet">
+    <style>
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+        [x-cloak] {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div x-data="{
+        isEnabled: false,
+        isLoading: true,
+        error: null,
+        lastUpdated: null,
+        autoRefresh: true,
+        refreshInterval: null,
+
+        async init() {
+            await this.fetchStatus();
+            this.setupAutoRefresh();
+        },
+
+        setupAutoRefresh() {
+            if (this.refreshInterval) clearInterval(this.refreshInterval);
+            if (this.autoRefresh) {
+                this.refreshInterval = setInterval(() => this.fetchStatus(), 30000);
+            }
+        },
+
+        async fetchStatus() {
+            this.error = null;
+            this.isLoading = true;
+            try {
+                const response = await fetch('/status');
+                const data = await response.json();
+                if (data.status === 'success') {
+                    this.isEnabled = data.enabled;
+                    this.lastUpdated = new Date().toLocaleTimeString();
+                } else {
+                    throw new Error(data.message || 'Failed to fetch status');
+                }
+            } catch (error) {
+                this.error = error.message;
+                console.error('Failed to fetch status:', error);
+            } finally {
+                this.isLoading = false;
+            }
+        },
+
+        async toggleBlocklist(enabled) {
+            if (this.isLoading) return;
+
+            const endpoint = enabled ? '/enable' : '/disable';
+            this.isLoading = true;
+            this.error = null;
+
+            try {
+                const response = await fetch(endpoint);
+                const data = await response.json();
+
+                if (response.ok && data.status === 'success') {
+                    await this.fetchStatus();
+                } else {
+                    throw new Error(data.message || 'Operation failed');
+                }
+            } catch (error) {
+                this.error = `Failed to ${enabled ? 'enable' : 'disable'} blocklist: ${error.message}`;
+            } finally {
+                this.isLoading = false;
+            }
+        }
+    }"
+    class="container mx-auto px-4 py-8 max-w-2xl"
+    x-cloak>
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-gray-800">Blocklist Control</h1>
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm text-gray-600">
+                        <input type="checkbox"
+                               x-model="autoRefresh"
+                               @change="setupAutoRefresh"
+                               class="mr-2">
+                        Auto-refresh
+                    </label>
+                    <button @click="fetchStatus"
+                            class="p-2 rounded hover:bg-gray-100"
+                            :disabled="isLoading">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-5 w-5"
+                             :class="{'animate-spin': isLoading}"
+                             fill="none"
+                             viewBox="0 0 24 24"
+                             stroke="currentColor">
+                            <path stroke-linecap="round"
+                                  stroke-linejoin="round"
+                                  stroke-width="2"
+                                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Error Alert -->
+            <div x-show="error"
+                 x-transition.duration.300ms
+                 class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+                <strong class="font-bold">Error!</strong>
+                <span class="block sm:inline" x-text="error"></span>
+            </div>
+
+            <!-- Status Card -->
+            <div class="mb-6 p-4 rounded-lg transition-all duration-200"
+                 :class="isEnabled ? 'bg-green-100 border-green-200' : 'bg-red-100 border-red-200'">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-semibold"
+                            :class="isEnabled ? 'text-green-800' : 'text-red-800'">
+                            Current Status:
+                            <span x-text="isEnabled ? 'Enabled' : 'Disabled'"
+                                  class="font-bold"></span>
+                        </h2>
+                        <p x-show="lastUpdated"
+                           class="text-sm text-gray-600 mt-1">
+                            Last updated: <span x-text="lastUpdated"></span>
+                        </p>
+                    </div>
+                    <div x-show="isLoading"
+                         class="animate-pulse">
+                        <div class="h-4 w-4 bg-gray-400 rounded-full"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex justify-center space-x-4">
+                <button @click="toggleBlocklist(true)"
+                        x-show="!isEnabled"
+                        :disabled="isLoading"
+                        class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                    Enable Blocklist
+                </button>
+                <button @click="toggleBlocklist(false)"
+                        x-show="isEnabled"
+                        :disabled="isLoading"
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200">
+                    Disable Blocklist
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
