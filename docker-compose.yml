@@ -5,6 +5,6 @@ services:
     ports:
       - "8000:8000"
     environment:
-      OPNSENSE_HOST: "${OPNSENSE_HOST}
+      OPNSENSE_HOST: ${OPNSENSE_HOST}
       OPNSENSE_API_SECRET: ${OPNSENSE_API_SECRET}
       OPNSENSE_API_KEY: ${OPNSENSE_API_KEY}
