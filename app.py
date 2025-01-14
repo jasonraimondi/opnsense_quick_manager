@@ -21,11 +21,11 @@ def inject_globals():
         'is_production': lambda: os.getenv('FLASK_ENV') == 'production'
     }
 
-@app.route("/")
+@app.route("/", methods=["GET"])
 def index():
     return send_file('templates/index.html')
 
-@app.route("/status")
+@app.route("/status", methods=["GET"])
 def get_status():
     try:
         enabled = api.get_blocklist_status()
@@ -33,7 +33,7 @@ def get_status():
     except Exception as e:
         return {"status": "error", "message": str(e)}, 500
 
-@app.route("/enable")
+@app.route("/enable", methods=["POST"])
 def enable_blocklist():
     try:
         api.toggle_unbound_blocklist(True)
@@ -41,7 +41,7 @@ def enable_blocklist():
     except Exception as e:
         return {"status": "error", "message": str(e)}, 500
 
-@app.route("/disable")
+@app.route("/disable", methods=["POST"])
 def disable_blocklist():
     try:
         api.toggle_unbound_blocklist(False)
