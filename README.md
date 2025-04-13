@@ -1,5 +1,7 @@
 # opnsense_quick_manager
 
+![Screenshot of OPNSense Quick Manager](./screenshot.png)
+
 Simple web interface to toggle and monitor OPNsense DNS blocking.
 
 ## Setup
